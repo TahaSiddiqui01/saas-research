@@ -118,6 +118,11 @@ Edit `langchain/utils/config.py` to customize:
 - Ollama model and base URL
 - Output directories
 - Agent temperature and max iterations
+ - LLM provider and model selection via `LLM_PROVIDER` (e.g. `ollama` or `openai`) and OpenAI settings (`OPENAI_MODEL`, `OPENAI_API_KEY`) if switching providers
+ - Default agent `TEMPERATURE` reduced to **0.2** for more deterministic outputs (use `TEMPERATURE` env var to override)
+ - Agents now must append a **structured JSON** object to the end of their responses (summary, findings, next, confidence) to improve routing and reduce ambiguous outputs
+ - Supervisor includes anti-loop rules to avoid repeatedly routing to the same worker when no new information is available
+ - Supervisor enforces a configurable `MAX_STEPS` (default 15) to avoid excessive iterations; set `MAX_STEPS` in `.env` to adjust
 
 ## Tools
 

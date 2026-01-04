@@ -23,8 +23,17 @@ class Config:
     REPORTS_DIR: str = os.getenv("REPORTS_DIR", "output/reports")
     
     # Agent settings
-    TEMPERATURE: float = 0.7
+    TEMPERATURE: float = float(os.getenv("TEMPERATURE", "0.2"))
+    # Generic LLM provider selection: 'ollama' or 'openai'
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")
+
+    # OpenAI settings (when provider is 'openai')
+    OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     MAX_ITERATIONS: int = 50
+    MAX_STEPS: int = int(os.getenv("MAX_STEPS", "15"))
+    # Logging
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
     @classmethod
     def ensure_directories(cls):
@@ -33,4 +42,48 @@ class Config:
         os.makedirs(cls.CHARTS_DIR, exist_ok=True)
         os.makedirs(cls.GRAPHS_DIR, exist_ok=True)
         os.makedirs(cls.REPORTS_DIR, exist_ok=True)
+
+    @classmethod
+    def validate(cls):
+        """Perform quick validation of configuration and create output dirs.
+
+        Should be called at program startup.
+        """
+        cls.ensure_directories()
+        # Additional validation could be added here in future
+
+    # LLM instance cache
+    _LLM_INSTANCE = None
+
+    @classmethod
+    def get_chat_llm(cls):
+        """Return a chat-capable LLM instance based on current configuration.
+
+        This centralizes LLM creation so agents and tools call a single factory.
+        The instance is cached on the class so it's only created once.
+        """
+        if cls._LLM_INSTANCE is not None:
+            return cls._LLM_INSTANCE
+
+        provider = cls.LLM_PROVIDER.lower()
+        if provider == "ollama":
+            try:
+                from langchain_ollama import ChatOllama
+
+                llm = ChatOllama(model=cls.OLLAMA_MODEL, base_url=cls.OLLAMA_BASE_URL, temperature=cls.TEMPERATURE)
+                cls._LLM_INSTANCE = llm
+                return llm
+            except Exception as e:
+                raise RuntimeError(f"Failed to initialize Ollama LLM: {e}")
+        elif provider == "openai":
+            try:
+                from langchain_openai import ChatOpenAI
+
+                llm = ChatOpenAI(model_name=cls.OPENAI_MODEL, temperature=cls.TEMPERATURE, openai_api_key=cls.OPENAI_API_KEY)
+                cls._LLM_INSTANCE = llm
+                return llm
+            except Exception as e:
+                raise RuntimeError(f"Failed to initialize OpenAI LLM: {e}")
+        else:
+            raise ValueError(f"Unsupported LLM_PROVIDER: {cls.LLM_PROVIDER}")
 

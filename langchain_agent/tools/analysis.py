@@ -1,11 +1,14 @@
 """Analysis tools for agents."""
 
 from langchain_core.tools import tool
-from langchain_ollama import OllamaLLM
 from langchain_agent.tools.chart_generator import ChartGenerator
 from langchain_agent.utils.config import Config
+from langchain_agent.utils.logger import setup_logger
+from langchain_agent.utils.response_utils import get_text
 
-llm = OllamaLLM(model=Config.OLLAMA_MODEL, base_url=Config.OLLAMA_BASE_URL)
+logger = setup_logger(__name__, level=Config.LOG_LEVEL)
+
+llm = Config.get_chat_llm()
 chart_generator = ChartGenerator(Config.CHARTS_DIR)
 
 @tool
@@ -37,8 +40,12 @@ def analyze_pain_killer_vitamin(description: str) -> str:
     - Vitamin: [Yes/No]
     ```
     """
-    response = llm.invoke(analysis)
-    return response.content
+    try:
+        response = llm.invoke(analysis)
+        return get_text(response)
+    except Exception as e:
+        logger.exception("analyze_pain_killer_vitamin failed: %s", e)
+        return f"Error in analyze_pain_killer_vitamin: {e}"
 
 @tool
 def analyze_bootstrapping_feasibility(description: str) -> str:
@@ -64,8 +71,12 @@ def analyze_bootstrapping_feasibility(description: str) -> str:
     - Bootstrapping Feasibility: [Yes/No]
     ```
     """
-    response = llm.invoke(analysis)
-    return response.content
+    try:
+        response = llm.invoke(analysis)
+        return get_text(response)
+    except Exception as e:
+        logger.exception("analyze_bootstrapping_feasibility failed: %s", e)
+        return f"Error in analyze_bootstrapping_feasibility: {e}"
 
 
 @tool
@@ -84,8 +95,12 @@ def analyze_payment_willingness(description: str) -> str:
         Assessment: [This would be filled by the agent using LLM reasoning]
     ```
     """
-    response = llm.invoke(analysis)
-    return response.content
+    try:
+        response = llm.invoke(analysis)
+        return get_text(response)
+    except Exception as e:
+        logger.exception("analyze_payment_willingness failed: %s", e)
+        return f"Error in analyze_payment_willingness: {e}"
 
 
 @tool
@@ -98,8 +113,12 @@ def generate_distribution_strategy(description: str) -> str:
     {description}
     ```
     """
-    response = llm.invoke(analysis)
-    return response.content
+    try:
+        response = llm.invoke(analysis)
+        return get_text(response)
+    except Exception as e:
+        logger.exception("generate_distribution_strategy failed: %s", e)
+        return f"Error in generate_distribution_strategy: {e}"
     
 
 
