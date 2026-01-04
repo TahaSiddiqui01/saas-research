@@ -31,20 +31,9 @@ def saas_finder_node(state: State) -> Command[Literal["supervisor"]]:
         state_with_system["messages"] = ([{"role": "system", "content": SAAS_FINDER_SYSTEM}] + state_with_system.get("messages", []))
         result = saas_finder_agent.invoke(state_with_system)
         logger.debug("SaaS finder agent returned result: %s", result)
-        try:
-            from langchain_agent.utils.response_utils import parse_trailing_json, get_text
-
-            last_text = get_text(result["messages"][-1].content) if isinstance(result, dict) and result.get("messages") else get_text(result)
-            parsed = parse_trailing_json(last_text)
-            if not parsed:
-                logger.warning("SaaS finder agent did not include structured JSON at end of response; this may lead to routing ambiguity.")
-        except Exception:
-            logger.exception("Failed to validate saas_finder agent structured output")
+        messages = [HumanMessage(content=result["messages"][-1].content, name="saas_finder")]
         return Command(
-            update={
-                "messages": [HumanMessage(content=result["messages"][-1].content, name="saas_finder")]
-            },
-            # We want our workers to ALWAYS "report back" to the supervisor when done
+            update={"messages": messages},
             goto="supervisor",
         )
     except Exception as e:

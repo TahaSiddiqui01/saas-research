@@ -31,18 +31,9 @@ def market_node(state: State) -> Command[Literal["supervisor"]]:
         state_with_system["messages"] = ([{"role": "system", "content": MARKET_SYSTEM}] + state_with_system.get("messages", []))
         result = market_agent.invoke(state_with_system)
         logger.debug("Market agent returned result: %s", result)
-        # Validate structured JSON appended by the worker
-        try:
-            from langchain_agent.utils.response_utils import parse_trailing_json, get_text
-
-            last_text = get_text(result["messages"][-1].content) if isinstance(result, dict) and result.get("messages") else get_text(result)
-            parsed = parse_trailing_json(last_text)
-            if not parsed:
-                logger.warning("Market agent did not include structured JSON at end of response; this may lead to routing ambiguity.")
-        except Exception:
-            logger.exception("Failed to validate market agent structured output")
-        return Command(
-            update={"messages": [HumanMessage(content=result["messages"][-1].content, name="market")]},
+        messages = [HumanMessage(content=result["messages"][-1].content, name="market")]
+        Command(
+            update={"messages": messages},
             # We want our workers to ALWAYS "report back" to the supervisor when done
             goto="supervisor",
         )

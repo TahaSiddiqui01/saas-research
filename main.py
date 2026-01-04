@@ -37,8 +37,9 @@ def main():
         raise
 
     try:
+        user_prompt = input("Enter the niche or industry to which you about to research: ")
         logger.info("Invoking research graph with initial prompt")
-        invoke_result = research_graph.invoke({"messages": [HumanMessage(content="I want to build a SaaS product in the project management niche for small teams")]})
+        invoke_result = research_graph.invoke({"messages": [HumanMessage(content=user_prompt)]})
         logger.info("Invocation completed")
         logger.debug("Invocation result: %s", invoke_result)
 
