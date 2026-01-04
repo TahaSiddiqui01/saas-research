@@ -138,6 +138,28 @@ def make_supervisor_node(llm: Any, members: list[str]) -> str:
             pass
 
         if goto == "FINISH":
+            # If FINISH was requested, ensure all members have been invoked at least once;
+            # otherwise prefer a missing member to collect its output before synthesizing.
+            try:
+                invoked = set()
+                for m in state.get("messages", []):
+                    if isinstance(m, dict):
+                        name = m.get("name")
+                    else:
+                        name = getattr(m, "name", None)
+                    if name:
+                        invoked.add(str(name))
+
+                missing = [m for m in members if m not in invoked]
+                if missing:
+                    # Choose first missing worker to run before finishing
+                    chosen = missing[0]
+                    reason = f"FINISH requested but worker(s) not executed: {', '.join(missing)}; invoking {chosen} to collect its result."
+                    logger.info("FINISH requested but missing workers: %s; routing to %s", missing, chosen)
+                    return Command(goto=chosen, update={"next": chosen, "reason": reason})
+            except Exception:
+                logger.exception("Error checking invoked workers; proceeding to synthesize")
+
             # synthesize a final markdown report using synth prompt
             logger.info("Supervisor decided to FINISH; synthesizing final report")
             synth_messages = [
